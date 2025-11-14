@@ -20,7 +20,6 @@ import matplotlib
 matplotlib.use('Agg') # check this
 import matplotlib.pyplot as plt
 import numpy as np
-import vaex
 import wpipe as wp
 import dask.dataframe as dd
 import os
@@ -116,8 +115,8 @@ def make_spatial(ds, path, targname, red_filter, blue_filter,
 
     Inputs
     ------
-    ds : Dataset
-        Vaex dataset
+    ds : DataFrame
+        pandas DataFrame
     red_filter : string
         filter name for "red" filter
     blue_filter : string
@@ -128,9 +127,9 @@ def make_spatial(ds, path, targname, red_filter, blue_filter,
         number of bins to calculate median photometric errors for
         default: 12
     density_kwargs : dict, optional
-        parameters to pass to ds.plot; see vaex documentation
+        parameters to control density display (e.g. {'f':'log10', 'colormap':'viridis'})
     scatter_kwargs : dict, optional
-        parameters to pass to ds.scatter; see vaex documentation
+        parameters to pass to matplotlib.scatter for sparse data
 
     Returns
     -------
@@ -143,25 +142,27 @@ def make_spatial(ds, path, targname, red_filter, blue_filter,
     ylab = 'Declination (J2000)'
     gst_criteria = ds['{}_gst'.format(red_filter)] & ds['{}_gst'.format(blue_filter)]
     name = path + "/" + targname + "_" + blue_filter + "_" + red_filter + "_" + "gst_spatial.png"
-    ds_gst = ds[gst_criteria]
-    
-    xmin = np.min(ds_gst['ra'].tolist())
-    xmax = np.max(ds_gst['ra'].tolist())
-    ymin = np.min(ds_gst['dec'].tolist())
-    ymax = np.max(ds_gst['dec'].tolist())
+    ds_gst = ds.loc[gst_criteria].copy()
+
+    xmin = np.min(ds_gst['ra'].values)
+    xmax = np.max(ds_gst['ra'].values)
+    ymin = np.min(ds_gst['dec'].values)
+    ymax = np.max(ds_gst['dec'].values)
     meddec = (np.pi/180.0)*(ymax + ymin)/2.0
     cosdec = np.cos(meddec)
     ratio = cosdec*(xmax-xmin)/(ymax-ymin)
     print("coords: ",xmax,xmin,ymax,ymin)
-    print(blue_filter,red_filter," has ",ds_gst.length()," stars in map.")
-    
-    if ds_gst.length() >= 20000:
+    print(blue_filter, red_filter, " has ", len(ds_gst), " stars in map.")
+
+    if len(ds_gst) >= 20000:
         fig, ax = plt.subplots(1, figsize=(7.0*ratio,5.5))
         plt.rcParams.update({'font.size': 20})
         plt.subplots_adjust(left=0.05, right=0.92, top=0.95, bottom=0.15)
-        #data_shape = int(np.sqrt(ds_gst.length()))
+        #data_shape = int(np.sqrt(len(ds_gst)))
         data_shape = 200
-        ds_gst.plot('ra', 'dec', shape=data_shape,limits=[[xmax,xmin],[ymin,ymax]],**density_kwargs)
+        hb = ax.hexbin(ds_gst['ra'].values, ds_gst['dec'].values, gridsize=data_shape,
+                cmap=density_kwargs.get('colormap','viridis'), bins=None)
+        fig.colorbar(hb, ax=ax)
         #plt.rcParams['axes.linewidth'] = 5
         plt.xticks(np.arange(xmin, xmax,(xmax-xmin)/5.0),fontsize=14)
         plt.yticks(np.arange(ymin, ymax,(ymax-ymin)/5.0),fontsize=14)
@@ -179,9 +180,9 @@ def make_spatial(ds, path, targname, red_filter, blue_filter,
         fig, ax = plt.subplots(1, figsize=(7.0*ratio,5.5), linewidth=2)
         plt.rcParams.update({'font.size': 20})
         plt.subplots_adjust(left=0.15, right=0.97, top=0.95, bottom=0.15)
-        ds_gst.viz.scatter('ra', 'dec', **scatter_kwargs)
-        plt.xlim=(xmax,xmin)
-        plt.ylim=(ymin,ymax)
+        ax.scatter(ds_gst['ra'].values, ds_gst['dec'].values, **scatter_kwargs)
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
 
         #plt.rcParams['axes.linewidth'] =5 
         plt.xticks(np.arange(xmin, xmax,(xmax-xmin)/5.0),fontsize=14)
@@ -222,13 +223,9 @@ if __name__ == "__main__":
 
     photfile = my_config.procpath+"/"+this_dp.filename
 
-    #try:
-    #    # I have never gotten vaex to read an hdf5 file successfully
-    #    ds = vaex.open(photfile)
-    #except:
     import pandas as pd
     df = pd.read_hdf(photfile, key='data')
-    ds = vaex.from_pandas(df)
+    ds = df
     #filters = my_config.parameters["filters"].split(',')
     #filters = my_config.parameters["det_filters"].split(',')
     colfile = my_config.parameters["colfile"]

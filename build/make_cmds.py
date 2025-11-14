@@ -20,7 +20,6 @@ import matplotlib
 matplotlib.use('Agg') # check this
 import matplotlib.pyplot as plt
 import numpy as np
-import vaex
 import wpipe as wp
 import dask.dataframe as dd
 import os
@@ -110,13 +109,13 @@ def make_cmd(ds, path, targname, red_filter, blue_filter, y_filter, n_err=12,
              #density_kwargs={'f':'log10', 'colormap':'viridis', 'linewidth':2},
              density_kwargs={'f':'log10', 'colormap':'viridis'},
              scatter_kwargs={'c':'k', 'alpha':0.5, 's':1, 'linewidth':2}):
-    """Plot a CMD with (blue_filter - red_filter) on the x-axis and 
+    """Plot a CMD with (blue_filter - red_filter) on the x-axis and
     y_filter on the y-axis.
 
     Inputs
     ------
-    ds : Dataset
-        Vaex dataset
+    ds : DataFrame
+        pandas DataFrame
     red_filter : string
         filter name for "red" filter
     blue_filter : string
@@ -127,9 +126,9 @@ def make_cmd(ds, path, targname, red_filter, blue_filter, y_filter, n_err=12,
         number of bins to calculate median photometric errors for
         default: 12
     density_kwargs : dict, optional
-        parameters to pass to ds.plot; see vaex documentation
+        parameters to control density display (e.g. {'f':'log10', 'colormap':'viridis'})
     scatter_kwargs : dict, optional
-        parameters to pass to ds.scatter; see vaex documentation
+        parameters to pass to matplotlib.scatter for sparse data
 
     Returns
     -------
@@ -143,22 +142,22 @@ def make_cmd(ds, path, targname, red_filter, blue_filter, y_filter, n_err=12,
     blue_vega = '{}_vega'.format(blue_filter)
     red_vega = '{}_vega'.format(red_filter)
     y_vega = '{}_vega'.format(y_filter)
-    ylab = '{}'.format(y_filter.upper()) 
-    ds[color] = ds[blue_vega]-ds[red_vega]
+    ylab = '{}'.format(y_filter.upper())
+    # ds is a pandas DataFrame here
+    ds[color] = ds[blue_vega] - ds[red_vega]
     gst_criteria = ds['{}_gst'.format(red_filter)] & ds['{}_gst'.format(blue_filter)]
     #gst_criteria = ds['({}_gst == True) & ({}_gst == True)'.format(red_filter, blue_filter)]
     name = path + "/" + targname + "_" + blue_filter + "_" + red_filter + "_" + "gst_cmd.png"
     if y_filter not in [blue_filter, red_filter]:
         # idk why you would do this but it's an option
         gst_criteria = gst_criteria & ds['{}_gst'.format(y_filter)]
-    # cut dataset down to gst stars
-    # could use ds.select() but i don't like it that much
-    ds_gst = ds[gst_criteria].extract()
-    # haxx
-    xmin = np.nanmin(ds_gst[color].tolist())
-    xmax = np.nanmax(ds_gst[color].tolist())
-    ymin = np.nanmin(ds_gst[y_vega].tolist())
-    ymax = np.nanmax(ds_gst[y_vega].tolist())
+    # cut dataset down to gst stars (pandas DataFrame)
+    ds_gst = ds.loc[gst_criteria].copy()
+    # compute plot limits
+    xmin = np.nanmin(ds_gst[color].values)
+    xmax = np.nanmax(ds_gst[color].values)
+    ymin = np.nanmin(ds_gst[y_vega].values)
+    ymax = np.nanmax(ds_gst[y_vega].values)
     if xmin < -2.5:
         if "f2" in blue_filter:
             xmin = -3
@@ -171,56 +170,72 @@ def make_cmd(ds, path, targname, red_filter, blue_filter, y_filter, n_err=12,
             xmax = 10
     if ymin < 15.0:
         ymin = 15.0
-    print(blue_filter,red_filter," has ",ds_gst.length()," stars in CMD.")
+    print(blue_filter, red_filter, " has ", len(ds_gst), " stars in CMD.")
 
-    if ds_gst.length() >= 20000:
+    if len(ds_gst) >= 20000:
         fig, ax = plt.subplots(1, figsize=(7.,5.5))
         plt.rcParams.update({'font.size': 20})
         plt.subplots_adjust(left=0.15, right=0.97, top=0.95, bottom=0.15)
-        #data_shape = int(np.sqrt(ds_gst.length()))
+        # use matplotlib hexbin for dense plots
         data_shape = 200
-        ds_gst.plot(color, y_vega, shape=data_shape,
-                    limits=[[xmin,xmax],[ymax,ymin]],
-                    **density_kwargs)
+        # hexbin expects x,y
+        hb = ax.hexbin(ds_gst[color].values, ds_gst[y_vega].values,
+                       gridsize=data_shape, cmap=density_kwargs.get('colormap','viridis'),
+                       bins=None if density_kwargs.get('f', None) is None else 'log')
+        fig.colorbar(hb, ax=ax)
         plt.rcParams['axes.linewidth'] = 5
-        plt.xticks(np.arange(int(xmin-0.5), int(xmax+0.5), 1.0),fontsize=20)
-        plt.yticks(np.arange(int(ymin-0.5), int(ymax+0.5), 1.0),fontsize=20)
+        plt.xticks(np.arange(int(xmin-0.5), int(xmax+0.5), 1.0), fontsize=20)
+        plt.yticks(np.arange(int(ymin-0.5), int(ymax+0.5), 1.0), fontsize=20)
 
-        ax.xaxis.set_tick_params(which='minor',direction='in', length=6, width=2, top=True, right=True)
-        ax.yaxis.set_tick_params(which='minor',direction='in', length=6, width=2, top=True, right=True)
+        ax.xaxis.set_tick_params(which='minor', direction='in', length=6, width=2, top=True, right=True)
+        ax.yaxis.set_tick_params(which='minor', direction='in', length=6, width=2, top=True, right=True)
         ax.xaxis.set_tick_params(direction='in', length=8, width=2, top=True, right=True)
         ax.yaxis.set_tick_params(direction='in', length=8, width=2, top=True, right=True)
-        for axis in ['top','bottom','left','right']:
-           ax.spines[axis].set_linewidth(4)
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(4)
         plt.minorticks_on()
-        plt.ylabel(ylab,fontsize=20)
-        plt.xlabel(color,fontsize=20)
+        plt.ylabel(ylab, fontsize=20)
+        plt.xlabel(color, fontsize=20)
     else:
         fig, ax = plt.subplots(1, figsize=(7.,5.5), linewidth=5)
         plt.rcParams.update({'font.size': 20})
         plt.subplots_adjust(left=0.15, right=0.97, top=0.95, bottom=0.15)
-        ds_gst.viz.scatter(color, y_vega,  **scatter_kwargs)
-        plt.rcParams['axes.linewidth'] =5 
-        plt.xticks(np.arange(int(xmin-0.5), int(xmax+0.5), 1.0),fontsize=20)
-        plt.yticks(np.arange(int(ymin-0.5), int(ymax+0.5), 1.0),fontsize=20)
-        ax.xaxis.set_tick_params(which='minor',direction='in', length=6, width=2, top=True, right=True)
-        ax.yaxis.set_tick_params(which='minor',direction='in', length=6, width=2, top=True, right=True)
+        # scatter plot for sparse datasets
+        ax.scatter(ds_gst[color].values, ds_gst[y_vega].values, **scatter_kwargs)
+        plt.rcParams['axes.linewidth'] = 5
+        plt.xticks(np.arange(int(xmin-0.5), int(xmax+0.5), 1.0), fontsize=20)
+        plt.yticks(np.arange(int(ymin-0.5), int(ymax+0.5), 1.0), fontsize=20)
+        ax.xaxis.set_tick_params(which='minor', direction='in', length=6, width=2, top=True, right=True)
+        ax.yaxis.set_tick_params(which='minor', direction='in', length=6, width=2, top=True, right=True)
         ax.xaxis.set_tick_params(direction='in', length=8, width=2, top=True, right=True)
         ax.yaxis.set_tick_params(direction='in', length=8, width=2, top=True, right=True)
-        for axis in ['top','bottom','left','right']:
-           ax.spines[axis].set_linewidth(2)
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(2)
         plt.minorticks_on()
     plt.xlim(int(xmin-0.5), int(xmax+0.5))
     plt.ylim(int(ymin-0.5), int(ymax+0.5))
     plt.ylabel(ylab,fontsize=20)
     plt.xlabel(color,fontsize=20)
     ax.invert_yaxis()
-    y_binned = ds_gst.mean(y_vega, binby=ds_gst[y_vega], shape=n_err)
-    xerr = ds_gst.median_approx('({}_err**2 + {}_err**2)**0.5'.format(blue_filter, red_filter),
-                                 binby=ds_gst[y_vega], shape=n_err)
-    yerr = ds_gst.median_approx('{}_err'.format(y_filter),
-                                 binby=ds_gst[y_vega], shape=n_err)
-    x_binned = [xmax*0.9]*n_err
+    # compute binned statistics using pandas: bin by y_vega into n_err bins
+    bins = np.linspace(ymin, ymax, n_err + 1)
+    bin_indices = np.digitize(ds_gst[y_vega].values, bins) - 1
+    y_binned = []
+    xerr = []
+    yerr = []
+    x_binned = [xmax * 0.9] * n_err
+    for b in range(n_err):
+        mask = bin_indices == b
+        if np.any(mask):
+            y_binned.append(np.nanmean(ds_gst.loc[mask, y_vega].values))
+            # x error is sqrt(blue_err^2 + red_err^2)
+            xerr.append(np.nanmedian(np.sqrt(ds_gst.loc[mask, '{}_err'.format(blue_filter)].values**2 +
+                                             ds_gst.loc[mask, '{}_err'.format(red_filter)].values**2)))
+            yerr.append(np.nanmedian(ds_gst.loc[mask, '{}_err'.format(y_filter)].values))
+        else:
+            y_binned.append(np.nan)
+            xerr.append(np.nan)
+            yerr.append(np.nan)
     ax.errorbar(x_binned, y_binned, yerr=yerr, xerr=xerr,
                 fmt=',', color='k', lw=1.5)
     fig.savefig(name)
@@ -247,13 +262,10 @@ if __name__ == "__main__":
 
     photfile = my_config.procpath  +  "/" + this_dp.filename
 
-    #try:
-    #    # I have never gotten vaex to read an hdf5 file successfully
-    #    ds = vaex.open(photfile)
-    #except:
     import pandas as pd
     df = pd.read_hdf(photfile, key='data')
-    ds = vaex.from_pandas(df)
+    # use pandas DataFrame directly
+    ds = df
     #filters = my_config.parameters["det_filters"].split(',')
     colfile = my_config.parameters["colfile"]
     my_job.logprint('Columns file: {}'.format(colfile))
