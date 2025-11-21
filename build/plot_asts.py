@@ -78,9 +78,9 @@ def make_resid_plot(my_job,df, path, targname, filter, n_err=12,
         number of bins to calculate median photometric errors for
         default: 12
     density_kwargs : dict, optional
-        parameters to pass to ds.plot; see vaex documentation
+        parameters to pass to plt.hist2d; see documentation
     scatter_kwargs : dict, optional
-        parameters to pass to ds.scatter; see vaex documentation
+        parameters to pass to plt.scatter; see documentation
 
     Returns
     -------
@@ -139,8 +139,7 @@ def make_resid_plot(my_job,df, path, targname, filter, n_err=12,
     plt.subplots_adjust(left=0.15, right=0.97, top=0.95, bottom=0.15)
 
     if len(df_gst) >= 50000:
-        # density plot via hist2d; note Vaex used limits [[xmin,xmax],[ymax,ymin]] which
-        # often reverses y-axis in plotting; here we'll draw histogram then set limits to match original intent
+        # density plot via hist2d
         data_shape = 200
         h = plt.hist2d(df_gst[incolname].to_numpy(), diff.to_numpy(),
                        bins=data_shape,
@@ -179,7 +178,7 @@ def make_resid_plot(my_job,df, path, targname, filter, n_err=12,
     plt.xlabel(xlab, fontsize=20)
     ax.invert_yaxis()
 
-    # Binned statistics to emulate Vaex mean/median_approx behavior:
+    # Binned statistics
     # bin by the input magnitude (incolname)
     try:
         bins = pd.qcut(df_gst[incolname], q=n_err, duplicates='drop')
@@ -261,10 +260,6 @@ if __name__ == "__main__":
 
     photfile = this_dp.filename
 
-    #try:
-    #    # I have never gotten vaex to read an hdf5 file successfully
-    #    ds = vaex.open(photfile)
-    #except:
     import pandas as pd
     df = pd.read_hdf(photfile, key='data')
 

@@ -126,9 +126,9 @@ def make_cmd(df, path, targname, red_filter, blue_filter, y_filter, n_err=12,
         number of bins to calculate median photometric errors for
         default: 12
     density_kwargs : dict, optional
-        parameters to pass to ds.plot; see vaex documentation
+        parameters to pass to plt.hist2d; see documentation
     scatter_kwargs : dict, optional
-        parameters to pass to ds.scatter; see vaex documentation
+        parameters to pass to plt.scatter; see documentation
 
     Returns
     -------
@@ -209,7 +209,7 @@ def make_cmd(df, path, targname, red_filter, blue_filter, y_filter, n_err=12,
     plt.xlabel(color)
     plt.ylabel(ylab)
 
-    # Binned errors (replicating Vaex binby behavior)
+    # Binned errors
     bins = pd.qcut(df_gst[y_vega], q=n_err, duplicates="drop")
 
     y_binned = df_gst.groupby(bins)[y_vega].mean().values
@@ -251,10 +251,6 @@ if __name__ == "__main__":
 
     photfile = my_config.procpath  +  "/" + this_dp.filename
 
-    #try:
-    #    # I have never gotten vaex to read an hdf5 file successfully
-    #    ds = vaex.open(photfile)
-    #except:
     import pandas as pd
     df = pd.read_hdf(photfile, key='data')
 

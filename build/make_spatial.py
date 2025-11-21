@@ -127,9 +127,9 @@ def make_spatial(df, path, targname, red_filter, blue_filter,
         number of bins to calculate median photometric errors for
         default: 12
     density_kwargs : dict, optional
-        parameters to pass to ds.plot; see vaex documentation
+        parameters to pass to plt.hist2d; see documentation
     scatter_kwargs : dict, optional
-        parameters to pass to ds.scatter; see vaex documentation
+        parameters to pass to plt.scatter; see documentation
 
     Returns
     -------
@@ -147,7 +147,7 @@ def make_spatial(df, path, targname, red_filter, blue_filter,
     gst_criteria = df[gst_col_red] & df[gst_col_blue]
     name = f"{path}/{targname}_{blue_filter}_{red_filter}_gst_spatial.png"
 
-    # filtered dataframe (copy like vaex.extract())
+    # filtered dataframe
     df_gst = df[gst_criteria].copy()
     
     # compute extents
@@ -169,9 +169,9 @@ def make_spatial(df, path, targname, red_filter, blue_filter,
         plt.rcParams.update({'font.size': 20})
         plt.subplots_adjust(left=0.05, right=0.92, top=0.95, bottom=0.15)
 
-        # density with hist2d (data_shape similar to vaex's shape param)
+        # density with hist2d
         data_shape = 200
-        # build 2D histogram with same ranges, then reverse x-axis to mimic Vaex limits
+        # build 2D histogram with same ranges, then reverse x-axis
         h = plt.hist2d(df_gst['ra'].to_numpy(), df_gst['dec'].to_numpy(),
                        bins=data_shape,
                        range=[[xmin, xmax], [ymin, ymax]],
@@ -193,7 +193,7 @@ def make_spatial(df, path, targname, red_filter, blue_filter,
         plt.ylabel(ylab, fontsize=20)
         plt.xlabel("Right Ascension (J2000)", fontsize=20)
 
-        # Reverse X-axis to match Vaex limits=[[xmax,xmin],...]
+        # Reverse X-axis
         plt.xlim(xmax, xmin)
 
     else:
@@ -206,7 +206,7 @@ def make_spatial(df, path, targname, red_filter, blue_filter,
 
         # set limits to mirror original intent (note: original code assigned plt.xlim/ylim incorrectly as attributes;
         # here we set them properly)
-        ax.set_xlim(xmax, xmin)  # reversed to match Vaex orientation
+        ax.set_xlim(xmax, xmin)  # reversed
         ax.set_ylim(ymin, ymax)
 
         xticks = np.arange(xmin, xmax, (xmax - xmin) / 5.0) if xmax != xmin else np.array([xmin])
@@ -250,10 +250,6 @@ if __name__ == "__main__":
 
     photfile = my_config.procpath+"/"+this_dp.filename
 
-    #try:
-    #    # I have never gotten vaex to read an hdf5 file successfully
-    #    ds = vaex.open(photfile)
-    #except:
     import pandas as pd
     df = pd.read_hdf(photfile, key='data')
 
