@@ -1,0 +1,20 @@
+VAEX IMPORT LOCATIONS - QUICK REFERENCE
+========================================
+
+Total instances: 3
+
+1. build/make_cmds.py:23
+   import vaex
+   Usage: vaex.from_pandas(df) at line 256
+
+2. build/plot_asts.py:23
+   import vaex
+   Usage: vaex.from_pandas(df) at line 198
+
+3. build/make_spatial.py:23
+   import vaex
+   Usage: vaex.from_pandas(df) at line 231
+
+All files use vaex for data visualization after converting pandas DataFrames.
+
+For detailed analysis, see VAEX_IMPORTS_REPORT.md
