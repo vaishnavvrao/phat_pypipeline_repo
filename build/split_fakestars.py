@@ -142,8 +142,8 @@ def send(this_event,my_config,my_job):
                     'compname': this_event.options['compname'],
                     'comp_jobid': this_event.options['comp_jobid'],
                     'config_id': my_config.config_id,
-                    'account': "astro-ckpt",
-                    'partition': "ckpt",
+                    'account': "ericbell0",
+                    'partition': "largemem",
                     'walltime': "6:00:00",
                     'run_number': i+minlist,
                     'memory': "300G"
