@@ -111,7 +111,7 @@ if __name__ == "__main__":
         f"Reference is {new_ref_dp.filename} is subtype {new_ref_dp.subtype}")
 
 # Define variable identifying the partition with most available memory
-    best_partition = "largemem" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
+    best_partition = "standard" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
 
 # Set up count for prep_image
     comp_name = 'completed_' + my_target.name

@@ -152,7 +152,7 @@ if __name__ == "__main__":
     print(my_input.name)
 
     #! Define variable identifying the partition with most available memory
-    best_partition = "largemem" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
+    best_partition = "standard" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
 
     if my_input.name=="Unsorted": 
         # Make a list of target names in Unsorted diectory proposal id and targetname

@@ -276,7 +276,7 @@ if __name__ == "__main__":
             ncpus = str(maxthreads)
 
     #! Define variable identifying the partition with most available memory
-    best_partition = "largemem" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
+    best_partition = "standard" #os.popen("""echo $(sinfo -o "%P %m" | sort -k2 -nr | head -n 1 | awk '{print $1}')""").read().strip('\n')
 ##############################
 # Create dataproduct for parameter file
     param_dp = wp.DataProduct(my_config, filename=my_target.name + '.param', relativepath=target_conf_path,

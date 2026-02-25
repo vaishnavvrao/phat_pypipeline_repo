@@ -143,10 +143,10 @@ def send(this_event,my_config,my_job):
                     'comp_jobid': this_event.options['comp_jobid'],
                     'config_id': my_config.config_id,
                     'account': "ericbell0",
-                    'partition': "largemem",
+                    'partition': "standard",
                     'walltime': "6:00:00",
                     'run_number': i+minlist,
-                    'memory': "300G"
+                    'memory': "150G"
                 }
             )
             my_event.fire()
