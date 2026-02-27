@@ -288,6 +288,10 @@ if __name__ == "__main__":
     mem = "50G"
 
     hours_to_main = optimize_wall()
+    # Max walltime on "standard" partition is 14 days, or 336 hours, so if the optimized walltime is above that, set to 330 hours to be safe
+    if hours_to_main > 330:
+        hours_to_main = 330
+
     wall = str(hours_to_main)+":00:00" 
     if count < 10:
         mem = "10G"
