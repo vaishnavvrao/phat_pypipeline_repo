@@ -146,7 +146,7 @@ def send(this_event,my_config,my_job):
                     'partition': "standard",
                     'walltime': "6:00:00",
                     'run_number': i+minlist,
-                    'memory': "150G"
+                    'memory': "50G"
                 }
             )
             my_event.fire()

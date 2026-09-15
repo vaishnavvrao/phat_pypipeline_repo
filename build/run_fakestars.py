@@ -111,7 +111,7 @@ if __name__ == "__main__":
     #else:
     my_job.logprint(f"Running DOLPHOT on {fake_param} and {dolphotout}")
     dolphot_command = "cd "+procpath+" && " + \
-        my_config.parameters["dolphot_path"]+"dolphot " + dolphotout + \
+        "/nfs/turbo/lsa-ericbell1/vvrao/software/dolphot2.1/bin/dolphot " + dolphotout + \
         ' -p' + param_path + "/" +  fake_param_filename + " >> "+logfile
     my_job.logprint(dolphot_command)
     dolphot_output = os.system(dolphot_command)
