@@ -147,7 +147,7 @@ if __name__ == "__main__":
         else:
             outfile_stats = os.stat(dolphotout)
             size = outfile_stats.st_size / (1024 * 1024 * 1024)
-            mem = "10G"
+            mem = "30G"
             if size > 3:
                 mem = "100G"
             if size > 5:
